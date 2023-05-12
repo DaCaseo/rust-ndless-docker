@@ -1,9 +1,9 @@
 FROM ubuntu:18.04
 
 LABEL \
-    maintainer="stepney141" \
+    maintainer="dacaseo" \
     version="1.0" \
-    description="Ndless SDK"
+    description="Ndless SDK + Rust"
 
 WORKDIR /opt/ndless-dev
 SHELL ["/bin/bash", "-c"]
@@ -29,8 +29,17 @@ RUN apt-get update -y \
     libboost-dev libboost-program-options-dev \
     wget \
     python3 python3-dev texinfo php \
+    curl pkg-config libssl-dev
+
+# Install rustup and set path
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
+ENV PATH=/root/.cargo/bin:$PATH
+
+## Install cargo packages we need
+RUN cargo install cargo-make cargo-generate && cargo install cargo-ndless
+
 ## Configure Ndless and the SDK
- && git clone --recursive https://github.com/ndless-nspire/Ndless.git \
+RUN git clone --recursive https://github.com/ndless-nspire/Ndless.git \
  && cd Ndless/ndless-sdk/toolchain && chmod +x build_toolchain.sh && ./build_toolchain.sh
 
 ## Set PATH before building the toolchain
@@ -41,3 +50,4 @@ ENV PATH /opt/ndless-dev/Ndless/ndless-sdk/toolchain/install/bin:/opt/ndless-dev
 RUN cd /opt/ndless-dev/Ndless \
  && make \
  && test "$(nspire-gcc 2>&1)" = "$(echo -e "arm-none-eabi-gcc: fatal error: no input files\ncompilation terminated.")"
+
